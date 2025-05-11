@@ -24,6 +24,14 @@ const Index = () => {
   const [showActionLog, setShowActionLog] = useState(false);
   const [showContextDebugger, setShowContextDebugger] = useState(false);
   
+  // Add a subtle background pattern style
+  const backgroundStyle = {
+    backgroundImage: `radial-gradient(rgba(120, 120, 250, 0.1) 1px, transparent 1px), 
+                     radial-gradient(rgba(120, 120, 250, 0.1) 1px, transparent 1px)`,
+    backgroundSize: '20px 20px',
+    backgroundPosition: '0 0, 10px 10px',
+  };
+  
   const {
     currentDate,
     selectedDate,
@@ -150,7 +158,7 @@ const Index = () => {
   };
 
   return (
-    <>
+    <div className="min-h-screen bg-slate-50 dark:bg-gray-900" style={backgroundStyle}>
       <Layout
         header={
           <Header 
@@ -236,7 +244,7 @@ const Index = () => {
         selectedDate={selectedDate}
         type="timeBlock"
       />
-    </>
+    </div>
   );
 };
 
