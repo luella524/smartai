@@ -64,6 +64,12 @@ const ActionLog: React.FC<ActionLogProps> = ({ logs, onClear, show, onClose }) =
                     <p>{log}</p>
                   </div>
                 )}
+                {log.includes('reschedule_calendar_event') && (
+                  <div className="flex items-start">
+                    <CheckCircle className="h-4 w-4 text-purple-500 mt-0.5 mr-2 flex-shrink-0" />
+                    <p>{log}</p>
+                  </div>
+                )}
                 {log.includes('Deleted') && (
                   <div className="flex items-start">
                     <CheckCircle className="h-4 w-4 text-amber-500 mt-0.5 mr-2 flex-shrink-0" />
@@ -79,7 +85,8 @@ const ActionLog: React.FC<ActionLogProps> = ({ logs, onClear, show, onClose }) =
                 {!log.includes('Added') && 
                   !log.includes('Updated') && 
                   !log.includes('Deleted') && 
-                  !log.includes('Could not') && (
+                  !log.includes('Could not') &&
+                  !log.includes('reschedule_calendar_event') && (
                   <div className="flex items-start">
                     <Info className="h-4 w-4 text-muted-foreground mt-0.5 mr-2 flex-shrink-0" />
                     <p>{log}</p>

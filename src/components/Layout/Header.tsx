@@ -1,6 +1,6 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { Sparkles, MessageCircle, ClipboardList } from 'lucide-react';
+import { Sparkles, MessageCircle, ClipboardList, Bug } from 'lucide-react';
 
 interface HeaderProps {
   date: string;
@@ -8,6 +8,7 @@ interface HeaderProps {
   isGenerating: boolean;
   showActionLog?: boolean;
   onToggleActionLog?: () => void;
+  onDebugContext?: () => void;
 }
 
 const Header: React.FC<HeaderProps> = ({ 
@@ -15,7 +16,8 @@ const Header: React.FC<HeaderProps> = ({
   onGenerateSuggestions, 
   isGenerating,
   showActionLog = false,
-  onToggleActionLog
+  onToggleActionLog,
+  onDebugContext
 }) => {
   return (
     <header className="flex items-center justify-between p-4 bg-card shadow-sm">
@@ -47,6 +49,16 @@ const Header: React.FC<HeaderProps> = ({
           >
             <ClipboardList className="mr-2 h-4 w-4" />
             Action Log
+          </Button>
+        )}
+        {onDebugContext && (
+          <Button
+            variant="outline"
+            className="flex items-center"
+            onClick={onDebugContext}
+          >
+            <Bug className="mr-2 h-4 w-4 text-amber-500" />
+            Debug
           </Button>
         )}
       </div>

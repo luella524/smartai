@@ -9,6 +9,7 @@ import TaskForm from '@/components/Tasks/TaskForm';
 import AISuggestions from '@/components/AI/AISuggestions';
 import ChatBox from '@/components/AI/ChatBox';
 import ActionLog from '@/components/AI/ActionLog';
+import ContextDebugger from '@/components/AI/ContextDebugger';
 
 import { useCalendar } from '@/hooks/useCalendar';
 import { useTasks } from '@/hooks/useTasks';
@@ -21,6 +22,7 @@ const Index = () => {
   const [taskFormOpen, setTaskFormOpen] = useState(false);
   const [timeBlockFormOpen, setTimeBlockFormOpen] = useState(false);
   const [showActionLog, setShowActionLog] = useState(false);
+  const [showContextDebugger, setShowContextDebugger] = useState(false);
   
   const {
     currentDate,
@@ -60,7 +62,8 @@ const Index = () => {
     isChatLoading,
     sendChatMessage,
     actionLog,
-    clearActionLog
+    clearActionLog,
+    lastSystemContext
   } = useAI(tasks, timeBlocks, selectedDate);
   
   const handleSaveTask = (task: Omit<Task, 'id'>) => {
@@ -141,6 +144,11 @@ const Index = () => {
     });
   };
 
+  // For development use - toggle context debugger (not shown in production)
+  const toggleContextDebugger = () => {
+    setShowContextDebugger(!showContextDebugger);
+  };
+
   return (
     <>
       <Layout
@@ -151,6 +159,7 @@ const Index = () => {
             isGenerating={isGenerating}
             showActionLog={showActionLog}
             onToggleActionLog={() => setShowActionLog(!showActionLog)}
+            onDebugContext={import.meta.env.DEV ? toggleContextDebugger : undefined}
           />
         }
         calendar={
@@ -199,6 +208,15 @@ const Index = () => {
         show={showActionLog}
         onClose={() => setShowActionLog(false)}
       />
+      
+      {/* Context Debugger - only in development */}
+      {import.meta.env.DEV && (
+        <ContextDebugger 
+          context={lastSystemContext}
+          show={showContextDebugger}
+          onClose={() => setShowContextDebugger(false)}
+        />
+      )}
       
       {/* Task form dialog */}
       <TaskForm
