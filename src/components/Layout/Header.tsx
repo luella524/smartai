@@ -1,29 +1,55 @@
-
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { Sparkles } from 'lucide-react';
+import { Sparkles, MessageCircle, ClipboardList } from 'lucide-react';
 
 interface HeaderProps {
   date: string;
   onGenerateSuggestions: () => void;
   isGenerating: boolean;
+  showActionLog?: boolean;
+  onToggleActionLog?: () => void;
 }
 
-const Header: React.FC<HeaderProps> = ({ date, onGenerateSuggestions, isGenerating }) => {
+const Header: React.FC<HeaderProps> = ({ 
+  date, 
+  onGenerateSuggestions, 
+  isGenerating,
+  showActionLog = false,
+  onToggleActionLog
+}) => {
   return (
     <header className="flex items-center justify-between p-4 bg-card shadow-sm">
       <div>
         <h1 className="text-2xl font-bold">SmartDay</h1>
         <p className="text-muted-foreground">{date}</p>
       </div>
-      <Button 
-        onClick={onGenerateSuggestions}
-        disabled={isGenerating}
-        className="bg-accent hover:bg-accent/90"
-      >
-        <Sparkles className="mr-2 h-4 w-4" />
-        {isGenerating ? 'Thinking...' : 'Get AI Suggestions'}
-      </Button>
+      <div className="flex gap-2">
+        <Button 
+          onClick={onGenerateSuggestions}
+          disabled={isGenerating}
+          className="bg-accent hover:bg-accent/90"
+        >
+          <Sparkles className="mr-2 h-4 w-4" />
+          {isGenerating ? 'Thinking...' : 'Get AI Suggestions'}
+        </Button>
+        <Button
+          variant="outline"
+          className="flex items-center"
+        >
+          <MessageCircle className="mr-2 h-4 w-4" />
+          Chat with AI
+        </Button>
+        {onToggleActionLog && (
+          <Button
+            variant={showActionLog ? "default" : "outline"}
+            className="flex items-center"
+            onClick={onToggleActionLog}
+          >
+            <ClipboardList className="mr-2 h-4 w-4" />
+            Action Log
+          </Button>
+        )}
+      </div>
     </header>
   );
 };

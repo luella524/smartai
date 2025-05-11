@@ -64,6 +64,20 @@ This project is built with:
 
 Simply open [Lovable](https://lovable.dev/projects/f7ecfdad-7ac1-456a-a94a-561e94852a13) and click on Share -> Publish.
 
+## OpenAI Integration
+
+This project includes AI chat functionality powered by OpenAI. To use this feature:
+
+1. Get an API key from [OpenAI's platform](https://platform.openai.com/api-keys)
+2. Create a `.env` file in the root directory (it's already included in .gitignore)
+3. Add your API key to the `.env` file:
+   ```
+   VITE_OPENAI_API_KEY=your_actual_api_key_here
+   ```
+4. Restart your development server if it's already running
+
+Without a valid API key, the application will fall back to simulated AI responses.
+
 ## Can I connect a custom domain to my Lovable project?
 
 Yes, you can!
