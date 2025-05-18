@@ -35,7 +35,7 @@ const CalendarView: React.FC<CalendarViewProps & {
   tasks,
   timeBlocks,
 }) => {
-  const weekDays = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
+  const weekDays = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'];
 
   // Get events for a specific day
   const getEventsForDay = (day: Date) => {
