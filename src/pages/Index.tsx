@@ -10,6 +10,8 @@ import AISuggestions from '@/components/AI/AISuggestions';
 import ChatBox from '@/components/AI/ChatBox';
 import ActionLog from '@/components/AI/ActionLog';
 import ContextDebugger from '@/components/AI/ContextDebugger';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
 
 import { useCalendar } from '@/hooks/useCalendar';
 import { useTasks } from '@/hooks/useTasks';
@@ -23,6 +25,7 @@ const Index = () => {
   const [timeBlockFormOpen, setTimeBlockFormOpen] = useState(false);
   const [showActionLog, setShowActionLog] = useState(false);
   const [showContextDebugger, setShowContextDebugger] = useState(false);
+  const [dayDetailOpen, setDayDetailOpen] = useState(false); // State for day detail dialog
   
   // Add a subtle background pattern style
   const backgroundStyle = {
@@ -159,6 +162,12 @@ const Index = () => {
     setShowContextDebugger(!showContextDebugger);
   };
 
+  // Handle double click on a day in the calendar
+  const handleDayDoubleClick = (date: Date) => {
+    selectDate(date);
+    setDayDetailOpen(true);
+  };
+
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-gray-900" style={backgroundStyle}>
       <Layout
@@ -185,6 +194,7 @@ const Index = () => {
             isSelected={isSelected}
             tasks={allTasks}
             timeBlocks={allTimeBlocks}
+            onDayDoubleClick={handleDayDoubleClick}
           />
         }
         content={
@@ -195,6 +205,7 @@ const Index = () => {
               onDismiss={dismissSuggestion}
               onClearAll={clearAllSuggestions}
             />
+            {/* TaskList component commented out
             <TaskList
               tasks={tasks}
               timeBlocks={timeBlocks}
@@ -202,6 +213,7 @@ const Index = () => {
               onAddTask={() => setTaskFormOpen(true)}
               onAddTimeBlock={() => setTimeBlockFormOpen(true)}
             />
+            */}
           </>
         }
         sidebar={
@@ -248,6 +260,51 @@ const Index = () => {
         selectedDate={selectedDate}
         type="timeBlock"
       />
+
+      {/* Day detail dialog */}
+      <Dialog open={dayDetailOpen} onOpenChange={setDayDetailOpen}>
+        <DialogContent className="sm:max-w-[700px] max-h-[80vh] overflow-hidden flex flex-col">
+          <DialogHeader className="px-1">
+            <DialogTitle className="text-2xl font-bold text-primary">
+              {formattedSelectedDate}
+            </DialogTitle>
+            <DialogDescription className="text-muted-foreground">
+              View and manage your schedule for this day
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="flex justify-end space-x-2 my-2">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => setTaskFormOpen(true)}
+              className="flex items-center gap-1"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-1"><rect width="18" height="18" x="3" y="3" rx="2" /><path d="m9 12 2 2 4-4" /></svg>
+              Add Task
+            </Button>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => setTimeBlockFormOpen(true)}
+              className="flex items-center gap-1"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-1"><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></svg>
+              Add Time Block
+            </Button>
+          </div>
+          
+          <div className="flex-1 overflow-auto py-4 -mx-6 px-6">
+            <TaskList
+              tasks={tasks}
+              timeBlocks={timeBlocks}
+              onToggleComplete={toggleTaskCompletion}
+              onAddTask={() => setTaskFormOpen(true)}
+              onAddTimeBlock={() => setTimeBlockFormOpen(true)}
+            />
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
