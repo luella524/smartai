@@ -50,6 +50,8 @@ const Index = () => {
   const {
     tasks,
     timeBlocks,
+    allTasks,
+    allTimeBlocks,
     addTask,
     updateTask,
     deleteTask,
@@ -181,6 +183,8 @@ const Index = () => {
             isToday={isToday}
             isCurrentMonth={isCurrentMonth}
             isSelected={isSelected}
+            tasks={allTasks}
+            timeBlocks={allTimeBlocks}
           />
         }
         content={

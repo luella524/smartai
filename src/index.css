@@ -1,4 +1,3 @@
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -94,22 +93,47 @@
     @apply bg-background text-foreground;
   }
 
+  /* Updated calendar styles */
   .calendar-grid {
     display: grid;
     grid-template-columns: repeat(7, minmax(0, 1fr));
-    gap: 1px;
   }
 
   .calendar-day {
-    @apply flex items-center justify-center rounded-md h-10 w-10 cursor-pointer transition-colors;
+    @apply flex items-center justify-center rounded-full h-8 w-8 text-sm font-medium transition-colors;
   }
   
   .calendar-day-selected {
-    @apply bg-calendar-day-selected text-white;
+    @apply bg-primary text-primary-foreground;
   }
   
   .calendar-day-today {
-    @apply border-2 border-calendar-day-today;
+    @apply bg-primary text-primary-foreground;
+  }
+
+  /* Event styles */
+  .calendar-event {
+    @apply rounded-sm px-2 py-1 text-xs mb-1 truncate transition-opacity hover:opacity-90;
+  }
+
+  .calendar-event-task {
+    @apply bg-blue-100 dark:bg-blue-900/40 text-blue-800 dark:text-blue-200;
+  }
+
+  .calendar-event-time-block {
+    @apply bg-indigo-100 dark:bg-indigo-900/40 text-indigo-800 dark:text-indigo-200;
+  }
+
+  .calendar-event-completed {
+    @apply line-through opacity-60;
+  }
+
+  .calendar-event-high-priority {
+    @apply bg-red-100 dark:bg-red-900/40 text-red-800 dark:text-red-200;
+  }
+
+  .calendar-event-medium-priority {
+    @apply bg-amber-100 dark:bg-amber-900/40 text-amber-800 dark:text-amber-200;
   }
 
   .time-block {

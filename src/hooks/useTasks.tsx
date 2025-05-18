@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Task, TimeBlock } from '../types';
 import { format } from 'date-fns';
@@ -139,6 +138,8 @@ export const useTasks = (selectedDate: Date) => {
   return {
     tasks: filteredTasks,
     timeBlocks: filteredTimeBlocks,
+    allTasks: tasks,
+    allTimeBlocks: timeBlocks,
     addTask,
     updateTask,
     deleteTask,
