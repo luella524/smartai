@@ -182,7 +182,7 @@ const parseAIResponse = (aiResponse: any, userMessage: string) => {
               add: {
                 type: 'add_calendar_event',
                 data: {
-                  title: title || eventId,
+                  title: title,
                   date: date || 'today',
                   startTime: startTime,
                   endTime: endTime
@@ -473,7 +473,11 @@ export const useAI = (tasks: Task[], timeBlocks: TimeBlock[], selectedDate: Date
 
 ${formattedCalendarItems}
 
-IMPORTANT: For modifying events, first identify the exact event by ID or exact title match. If the user asks to "reschedule" or "move" an event, you should treat it as two operations: 1) identifying and preparing to delete the original event, and 2) creating a new event with the updated information.
+IMPORTANT:
+- For modifying events (e.g., changing title, time, or date), use the 'edit_calendar_event' function. Provide the 'eventId' of the existing event and all the new details for the event in a single call.
+- If an event is being moved to a new date/time, use 'edit_calendar_event' with the new date/time details.
+- Only use 'delete_calendar_event' if the user explicitly asks to remove an event permanently.
+- Only use 'add_calendar_event' for entirely new events.
 
 When the user references events by partial descriptions (like "my meeting" or "dentist appointment"), try to find the best match from the list above.
 
@@ -510,74 +514,92 @@ For time formats, prefer 24-hour format (e.g., "14:00" instead of "2:00 PM").`
         if (action.type === 'reschedule' && action.delete && action.add && 
             deleteTaskFn && addTaskFn) {
           
-          // First handle the delete operation
           const deleteAction = action.delete;
-          const eventId = deleteAction.data.eventId;
+          const aiProvidedIdentifier = deleteAction.data.eventId; // This is what AI sent as eventId
           const addAction = action.add;
-          const { title, date, startTime, endTime } = addAction.data;
+          const { title: newTitle, date: newDate, startTime: newStartTime, endTime: newEndTime } = addAction.data;
           
-          // Prepare a single log entry for the reschedule operation
           logEntry = `Action: reschedule_calendar_event`;
-          
-          // Try to find the item to delete
-          let taskToDelete = allTasks.find(t => t.id === eventId);
-          let timeBlockToDelete = allTimeBlocks.find(tb => tb.id === eventId);
-          
-          // If not found by ID, try to find by exact title match
-          if (!taskToDelete) {
-            taskToDelete = allTasks.find(t => t.title.toLowerCase() === eventId.toLowerCase());
-          }
-          if (!timeBlockToDelete) {
-            timeBlockToDelete = allTimeBlocks.find(tb => tb.title.toLowerCase() === eventId.toLowerCase());
-          }
-          
-          // If still not found, try partial match
-          if (!taskToDelete) {
-            taskToDelete = allTasks.find(t => t.title.toLowerCase().includes(eventId.toLowerCase()));
-          }
-          if (!timeBlockToDelete) {
-            timeBlockToDelete = allTimeBlocks.find(tb => tb.title.toLowerCase().includes(eventId.toLowerCase()));
-          }
-          
-          // Store original properties of the deleted item
-          let originalItem = null;
-          let wasTimeBlock = false;
-          
-          // Delete the old event
-          if (taskToDelete) {
-            originalItem = { ...taskToDelete };
-            deleteTaskFn(taskToDelete.id);
-            // Add details to log entry for reschedule operation
-            const oldDate = originalItem.date;
-            const oldTime = originalItem.startTime || '';
-            logEntry += ` - Modified task: "${originalItem.title}" from ${oldDate}${oldTime ? ` at ${oldTime}` : ''}`;
-          } else if (timeBlockToDelete && deleteTimeBlockFn) {
-            originalItem = { ...timeBlockToDelete };
-            wasTimeBlock = true;
-            deleteTimeBlockFn(timeBlockToDelete.id);
-            // Add details to log entry for reschedule operation
-            const oldDate = originalItem.date;
-            const oldTime = originalItem.startTime || '';
-            logEntry += ` - Modified time block: "${originalItem.title}" from ${oldDate}${oldTime ? ` at ${oldTime}` : ''}`;
+
+          let itemToModify = null;
+          let itemType = null; // 'task' or 'timeBlock'
+          const normalizedIdentifier = aiProvidedIdentifier.trim().toLowerCase();
+
+          // 1. Try to find by ID
+          itemToModify = allTasks.find(t => t.id === aiProvidedIdentifier);
+          if (itemToModify) {
+            itemType = 'task';
           } else {
-            logEntry += ` - Could not find event to modify with identifier: ${eventId}`;
+            itemToModify = allTimeBlocks.find(b => b.id === aiProvidedIdentifier);
+            if (itemToModify) {
+              itemType = 'timeBlock';
+            }
+          }
+
+          // 2. If not found by ID, try by exact title match (normalized)
+          if (!itemToModify) {
+            itemToModify = allTasks.find(t => t.title.trim().toLowerCase() === normalizedIdentifier);
+            if (itemToModify) {
+              itemType = 'task';
+            } else {
+              itemToModify = allTimeBlocks.find(b => b.title.trim().toLowerCase() === normalizedIdentifier);
+              if (itemToModify) {
+                itemType = 'timeBlock';
+              }
+            }
+          }
+
+          // 3. If not found by exact title, try by partial title match (normalized)
+          if (!itemToModify) {
+            itemToModify = allTasks.find(t => t.title.trim().toLowerCase().includes(normalizedIdentifier));
+            if (itemToModify) {
+              itemType = 'task';
+            } else {
+              itemToModify = allTimeBlocks.find(b => b.title.trim().toLowerCase().includes(normalizedIdentifier));
+              if (itemToModify) {
+                itemType = 'timeBlock';
+              }
+            }
           }
           
-          // Then handle the add operation if deletion was successful
+          let originalItem = null;
+          
+          if (itemToModify) {
+            originalItem = { ...itemToModify }; // Store original item details
+            const oldTitle = originalItem.title;
+            const oldDate = originalItem.date;
+            const oldStartTime = originalItem.startTime || '';
+
+            if (itemType === 'task') {
+              deleteTaskFn(itemToModify.id);
+              logEntry += ` - Modified task: "${oldTitle}" from ${oldDate}${oldStartTime ? ` at ${oldStartTime}` : ''}`;
+            } else if (itemType === 'timeBlock' && deleteTimeBlockFn) {
+              deleteTimeBlockFn(itemToModify.id);
+              logEntry += ` - Modified time block: "${oldTitle}" from ${oldDate}${oldStartTime ? ` at ${oldStartTime}` : ''}`;
+            } else {
+              // Should not happen if itemType is correctly set
+               logEntry += ` - Error: Found item but failed to determine type or delete function for ${aiProvidedIdentifier}`;
+               originalItem = null; // Prevent adding new item if delete failed
+            }
+          } else {
+            logEntry += ` - Could not find event to modify with identifier: ${aiProvidedIdentifier}`;
+          }
+          
+          // Then handle the add operation if deletion was successful (originalItem is not null)
           if (originalItem) {
             // Format the date properly
-            let formattedDate = date;
-            if (date === 'today') {
+            let formattedDate = newDate;
+            if (newDate === 'today') {
               formattedDate = format(new Date(), 'yyyy-MM-dd');
-            } else if (date === 'tomorrow') {
+            } else if (newDate === 'tomorrow') {
               const tomorrow = new Date();
               tomorrow.setDate(tomorrow.getDate() + 1);
               formattedDate = format(tomorrow, 'yyyy-MM-dd');
-            } else if (/monday|tuesday|wednesday|thursday|friday|saturday|sunday/i.test(date)) {
+            } else if (/monday|tuesday|wednesday|thursday|friday|saturday|sunday/i.test(newDate)) {
               // Find the next occurrence of the day
               const today = new Date();
               const dayOfWeek = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday']
-                .findIndex(day => day === date.toLowerCase());
+                .findIndex(day => day === newDate.toLowerCase());
               
               if (dayOfWeek >= 0) {
                 const daysToAdd = (dayOfWeek + 7 - today.getDay()) % 7 || 7;
@@ -588,16 +610,16 @@ For time formats, prefer 24-hour format (e.g., "14:00" instead of "2:00 PM").`
             }
             
             // Complete the log entry with the new date/time information
-            logEntry += ` to ${formattedDate}${startTime ? ` at ${startTime}` : ''}`;
+            logEntry += ` to ${formattedDate}${newStartTime ? ` at ${newStartTime}` : ''}`;
             
             // Create new event with proper type (task or time block)
-            if (wasTimeBlock && addTimeBlockFn) {
+            if (itemType === 'timeBlock' && addTimeBlockFn) {
               // It was a time block
               const newTimeBlock: Omit<TimeBlock, 'id'> = {
-                title: title || originalItem.title,
+                title: newTitle || originalItem.title,
                 date: formattedDate,
-                startTime: startTime || originalItem.startTime,
-                endTime: endTime || originalItem.endTime,
+                startTime: newStartTime || originalItem.startTime,
+                endTime: newEndTime || originalItem.endTime,
                 color: originalItem.color || '#93C5FD'
               };
               
@@ -605,12 +627,12 @@ For time formats, prefer 24-hour format (e.g., "14:00" instead of "2:00 PM").`
             } else {
               // It was a task
               const newTask: Omit<Task, 'id'> = {
-                title: title || originalItem.title,
+                title: newTitle || originalItem.title,
                 date: formattedDate,
                 completed: false,
                 priority: originalItem.priority || 'medium',
-                startTime: startTime || originalItem.startTime,
-                endTime: endTime || originalItem.endTime,
+                startTime: newStartTime || originalItem.startTime,
+                endTime: newEndTime || originalItem.endTime,
               };
               
               addTaskFn(newTask);
@@ -677,58 +699,79 @@ For time formats, prefer 24-hour format (e.g., "14:00" instead of "2:00 PM").`
             }
           }
         } else if (action.type === 'edit_calendar_event' && updateTaskFn && updateTimeBlockFn) {
-          // Set the action type for this log entry
           logEntry = `Action: ${action.type}`;
           
-          // Find the event to edit
-          const { eventId, title, date, startTime, endTime } = action.data;
-          
-          // First try to find the task or time block by ID
-          let taskToEdit = allTasks.find(t => t.id === eventId);
-          let timeBlockToEdit = allTimeBlocks.find(tb => tb.id === eventId);
-          
-          // If not found by ID, try to find by exact title match
-          if (!taskToEdit) {
-            taskToEdit = allTasks.find(t => t.title.toLowerCase() === eventId.toLowerCase());
-          }
-          if (!timeBlockToEdit) {
-            timeBlockToEdit = allTimeBlocks.find(tb => tb.title.toLowerCase() === eventId.toLowerCase());
-          }
-          
-          // If still not found, try partial match
-          if (!taskToEdit) {
-            taskToEdit = allTasks.find(t => t.title.toLowerCase().includes(eventId.toLowerCase()));
-          }
-          if (!timeBlockToEdit) {
-            timeBlockToEdit = allTimeBlocks.find(tb => tb.title.toLowerCase().includes(eventId.toLowerCase()));
-          }
-          
-          if (taskToEdit) {
-            // Create updated task with all existing properties plus the changes
-            const updatedTask: Task = {
-              ...taskToEdit,
-              title: title || taskToEdit.title,
-              date: date || taskToEdit.date,
-              startTime: startTime || taskToEdit.startTime,
-              endTime: endTime || taskToEdit.endTime
-            };
-            
-            updateTaskFn(updatedTask);
-            logEntry += ` - Updated task ${taskToEdit.id}: ${JSON.stringify({title: updatedTask.title, date: updatedTask.date, startTime: updatedTask.startTime, endTime: updatedTask.endTime})}`;
-          } else if (timeBlockToEdit) {
-            // Create updated time block with all existing properties plus the changes
-            const updatedTimeBlock: TimeBlock = {
-              ...timeBlockToEdit,
-              title: title || timeBlockToEdit.title,
-              date: date || timeBlockToEdit.date,
-              startTime: startTime || timeBlockToEdit.startTime,
-              endTime: endTime || timeBlockToEdit.endTime
-            };
-            
-            updateTimeBlockFn(updatedTimeBlock);
-            logEntry += ` - Updated time block ${timeBlockToEdit.id}: ${JSON.stringify({title: updatedTimeBlock.title, date: updatedTimeBlock.date, startTime: updatedTimeBlock.startTime, endTime: updatedTimeBlock.endTime})}`;
+          const { eventId: aiProvidedIdentifier, title: newTitle, date: newDate, startTime: newStartTime, endTime: newEndTime } = action.data;
+
+          let itemToModify = null;
+          let itemType = null; // 'task' or 'timeBlock'
+          const normalizedIdentifier = aiProvidedIdentifier.trim().toLowerCase();
+
+          // 1. Try to find by ID
+          itemToModify = allTasks.find(t => t.id === aiProvidedIdentifier);
+          if (itemToModify) {
+            itemType = 'task';
           } else {
-            logEntry += ` - Could not find event to edit with identifier: ${eventId}`;
+            itemToModify = allTimeBlocks.find(b => b.id === aiProvidedIdentifier);
+            if (itemToModify) {
+              itemType = 'timeBlock';
+            }
+          }
+
+          // 2. If not found by ID, try by exact title match (normalized)
+          if (!itemToModify) {
+            itemToModify = allTasks.find(t => t.title.trim().toLowerCase() === normalizedIdentifier);
+            if (itemToModify) {
+              itemType = 'task';
+            } else {
+              itemToModify = allTimeBlocks.find(b => b.title.trim().toLowerCase() === normalizedIdentifier);
+              if (itemToModify) {
+                itemType = 'timeBlock';
+              }
+            }
+          }
+
+          // 3. If not found by exact title, try by partial title match (normalized)
+          if (!itemToModify) {
+            itemToModify = allTasks.find(t => t.title.trim().toLowerCase().includes(normalizedIdentifier));
+            if (itemToModify) {
+              itemType = 'task';
+            } else {
+              itemToModify = allTimeBlocks.find(b => b.title.trim().toLowerCase().includes(normalizedIdentifier));
+              if (itemToModify) {
+                itemType = 'timeBlock';
+              }
+            }
+          }
+
+          if (itemToModify) {
+            if (itemType === 'task') {
+              const updatedTask: Task = {
+                ...(itemToModify as Task),
+                title: newTitle || itemToModify.title,
+                date: newDate || itemToModify.date,
+                startTime: newStartTime || itemToModify.startTime,
+                endTime: newEndTime || itemToModify.endTime,
+                // Ensure other properties like priority, completed, tags are preserved
+                priority: (newTitle || newDate || newStartTime || newEndTime) ? (itemToModify as Task).priority : (action.data.priority || (itemToModify as Task).priority), 
+              };
+              updateTaskFn(updatedTask);
+              logEntry += ` - Updated task ${itemToModify.id}: ${JSON.stringify({title: updatedTask.title, date: updatedTask.date, startTime: updatedTask.startTime, endTime: updatedTask.endTime})}`;
+            } else if (itemType === 'timeBlock') {
+              const updatedTimeBlock: TimeBlock = {
+                ...(itemToModify as TimeBlock),
+                title: newTitle || itemToModify.title,
+                date: newDate || itemToModify.date,
+                startTime: newStartTime || itemToModify.startTime,
+                endTime: newEndTime || itemToModify.endTime,
+                 // Ensure other properties like color are preserved
+                color: (itemToModify as TimeBlock).color, 
+              };
+              updateTimeBlockFn(updatedTimeBlock);
+              logEntry += ` - Updated time block ${itemToModify.id}: ${JSON.stringify({title: updatedTimeBlock.title, date: updatedTimeBlock.date, startTime: updatedTimeBlock.startTime, endTime: updatedTimeBlock.endTime})}`;
+            }
+          } else {
+            logEntry += ` - Could not find event to edit with identifier: ${aiProvidedIdentifier}`;
           }
         } else if (action.type === 'delete_calendar_event' && deleteTaskFn && deleteTimeBlockFn) {
           // Set the action type for this log entry
