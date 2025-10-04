@@ -56,7 +56,7 @@ const CalendarView: React.FC<CalendarViewProps & {
   const MAX_VISIBLE_EVENTS = 5;
 
   return (
-    <div className="bg-white dark:bg-gray-950 rounded-xl shadow-md overflow-hidden mb-6 flex flex-col h-full max-h-[calc(100vh-8rem)]">
+    <div className="bg-white dark:bg-gray-950 rounded-xl shadow-md overflow-hidden mb-6 flex flex-col h-full">
       {/* Calendar header */}
       <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-800 flex items-center justify-between flex-shrink-0">
         <div className="flex items-center gap-3">
@@ -93,7 +93,7 @@ const CalendarView: React.FC<CalendarViewProps & {
 
       {/* Calendar grid - Made scrollable with appropriate constraints */}
       <div className="flex-1 overflow-auto">
-        <div className="grid grid-cols-7 auto-rows-[minmax(80px,1fr)]">
+        <div className="grid grid-cols-7 auto-rows-[minmax(60px,1fr)]">
           {daysInMonth.map((day) => {
             const formattedDate = format(day, 'd');
             const { tasks: dayTasks, timeBlocks: dayTimeBlocks } = getEventsForDay(day);
@@ -124,7 +124,7 @@ const CalendarView: React.FC<CalendarViewProps & {
               >
                 <div 
                   className={cn(
-                    "self-start px-2 py-0.5 rounded-full text-xs font-medium mt-1 mb-1",
+                    "self-start px-2 py-1 rounded-full text-xs font-medium mt-1 mb-1",
                     isToday(day) && "bg-blue-500 text-white", 
                     !isToday(day) && "text-gray-600 dark:text-gray-400"
                   )}
@@ -172,12 +172,12 @@ const CalendarView: React.FC<CalendarViewProps & {
                       >
                         {isTask && (
                           <div className={cn(
-                            "w-2 h-2 rounded-full mr-1.5 flex-shrink-0",
+                            "w-1.5 h-1.5 rounded-full mr-1 flex-shrink-0",
                             (event as Task).completed ? "bg-green-500" : "bg-blue-500"
                           )} />
                         )}
                         {!isTask && (
-                          <div className="w-2 h-2 rounded-full mr-1.5 flex-shrink-0 bg-indigo-500" />
+                          <div className="w-1.5 h-1.5 rounded-full mr-1 flex-shrink-0 bg-indigo-500" />
                         )}
                         <div className="truncate flex-1">
                           {event.startTime && (

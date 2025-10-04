@@ -1,40 +1,18 @@
-import React, { useState } from 'react';
-import { format } from 'date-fns';
-
-import Layout from '@/components/Layout/Layout';
-import Header from '@/components/Layout/Header';
-import CalendarView from '@/components/Calendar/CalendarView';
-import TaskList from '@/components/Tasks/TaskList';
-import TaskForm from '@/components/Tasks/TaskForm';
-import AISuggestions from '@/components/AI/AISuggestions';
-import ChatBox from '@/components/AI/ChatBox';
-import ActionLog from '@/components/AI/ActionLog';
-import ContextDebugger from '@/components/AI/ContextDebugger';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-
+import React from 'react';
 import { useCalendar } from '@/hooks/useCalendar';
 import { useTasks } from '@/hooks/useTasks';
 import { useAI } from '@/hooks/useAI';
-import { Task, TimeBlock, AISuggestion } from '@/types';
-import { useToast } from '@/components/ui/use-toast';
+import { format } from 'date-fns';
+import Header from '@/components/Layout/Header';
+import CalendarView from '@/components/Calendar/CalendarView';
+import TaskForm from '@/components/Tasks/TaskForm';
+import TaskList from '@/components/Tasks/TaskList';
+import Top3TodoList from '@/components/Tasks/Top3TodoList';
+import AISuggestions from '@/components/AI/AISuggestions';
+import ChatBox from '@/components/AI/ChatBox';
+import Layout from '@/components/Layout/Layout';
 
 const Index = () => {
-  const { toast } = useToast();
-  const [taskFormOpen, setTaskFormOpen] = useState(false);
-  const [timeBlockFormOpen, setTimeBlockFormOpen] = useState(false);
-  const [showActionLog, setShowActionLog] = useState(false);
-  const [showContextDebugger, setShowContextDebugger] = useState(false);
-  const [dayDetailOpen, setDayDetailOpen] = useState(false); // State for day detail dialog
-  
-  // Add a subtle background pattern style
-  const backgroundStyle = {
-    backgroundImage: `radial-gradient(rgba(120, 120, 250, 0.1) 1px, transparent 1px), 
-                     radial-gradient(rgba(120, 120, 250, 0.1) 1px, transparent 1px)`,
-    backgroundSize: '20px 20px',
-    backgroundPosition: '0 0, 10px 10px',
-  };
-  
   const {
     currentDate,
     selectedDate,
@@ -49,7 +27,7 @@ const Index = () => {
     isSelected,
     formattedSelectedDate,
   } = useCalendar();
-  
+
   const {
     tasks,
     timeBlocks,
@@ -63,7 +41,7 @@ const Index = () => {
     deleteTimeBlock,
     toggleTaskCompletion,
   } = useTasks(selectedDate);
-  
+
   const {
     suggestions,
     isGenerating,
@@ -77,235 +55,83 @@ const Index = () => {
     actionLog,
     clearActionLog,
     lastSystemContext
-  } = useAI(tasks, timeBlocks, selectedDate);
-  
-  const handleSaveTask = (task: Omit<Task, 'id'>) => {
-    addTask(task);
-    toast({
-      title: "Task created",
-      description: `"${task.title}" has been added to your schedule.`,
-    });
-  };
-  
-  const handleSaveTimeBlock = (timeBlock: Omit<TimeBlock, 'id'>) => {
-    addTimeBlock(timeBlock);
-    toast({
-      title: "Time block created",
-      description: `"${timeBlock.title}" has been added to your schedule.`,
-    });
-  };
-  
-  const handleApplySuggestion = (suggestion: AISuggestion) => {
-    if (suggestion.type === 'task' && suggestion.task) {
-      addTask({
-        ...suggestion.task,
-        completed: false,
-        priority: suggestion.task.priority || 'medium',
-        date: suggestion.task.date || format(selectedDate, 'yyyy-MM-dd'),
-        title: suggestion.task.title || 'New Task',
-      });
-      toast({
-        title: "Task created",
-        description: `"${suggestion.task.title || 'New Task'}" has been added to your schedule.`,
-      });
-    } else if (suggestion.type === 'timeBlock' && suggestion.timeBlock) {
-      addTimeBlock({
-        ...suggestion.timeBlock,
-        title: suggestion.timeBlock.title || 'Time Block',
-        date: suggestion.timeBlock.date || format(selectedDate, 'yyyy-MM-dd'),
-        color: '#93C5FD',
-        startTime: suggestion.timeBlock.startTime || '09:00',
-        endTime: suggestion.timeBlock.endTime || '10:00',
-      });
-      toast({
-        title: "Time block created",
-        description: `"${suggestion.timeBlock.title || 'Time Block'}" has been added to your schedule.`,
-      });
-    }
+  } = useAI(allTasks, allTimeBlocks, selectedDate);
+
+  // Calculate Top 3 tasks for this week
+  const getTop3Tasks = () => {
+    const today = new Date();
+    const startOfWeek = new Date(today);
+    startOfWeek.setDate(today.getDate() - today.getDay()); // Start from Sunday
+    const endOfWeek = new Date(startOfWeek);
+    endOfWeek.setDate(startOfWeek.getDate() + 6); // End on Saturday
     
-    applySuggestion(suggestion);
-  };
-  
-  const handleGenerateSuggestions = () => {
-    generateSuggestions();
-    toast({
-      title: "Generating suggestions",
-      description: "AI is analyzing your schedule to provide personalized recommendations.",
-    });
+    const startOfWeekStr = format(startOfWeek, 'yyyy-MM-dd');
+    const endOfWeekStr = format(endOfWeek, 'yyyy-MM-dd');
+    
+    const weekTasks = allTasks
+      .filter(task => task.date >= startOfWeekStr && task.date <= endOfWeekStr && !task.completed)
+      .sort((a, b) => {
+        const priorityOrder = { high: 3, medium: 2, low: 1 };
+        const aPriority = priorityOrder[a.priority as keyof typeof priorityOrder] || 2;
+        const bPriority = priorityOrder[b.priority as keyof typeof priorityOrder] || 2;
+        return bPriority - aPriority;
+      })
+      .slice(0, 3);
+
+    const completedThisWeek = allTasks.filter(task => task.date >= startOfWeekStr && task.date <= endOfWeekStr && task.completed).length;
+    const totalThisWeek = allTasks.filter(task => task.date >= startOfWeekStr && task.date <= endOfWeekStr).length;
+    
+    return {
+      tasks: weekTasks.map(task => ({ id: task.id, title: task.title, priority: task.priority })),
+      progress: { completed: completedThisWeek, total: totalThisWeek, rate: totalThisWeek > 0 ? Math.round((completedThisWeek / totalThisWeek) * 100) : 0 }
+    };
   };
 
-  // Handle sending messages to the AI chat
-  const handleSendChatMessage = (message: string) => {
-    // Pass all the necessary calendar functions
-    sendChatMessage(
-      message,
-      addTask,
-      updateTask,
-      deleteTask,
-      addTimeBlock,
-      updateTimeBlock,
-      deleteTimeBlock
-    );
-  };
-  
-  // Add a handler for clearing the action log with toast notification
-  const handleClearActionLog = () => {
-    clearActionLog();
-    toast({
-      title: "Action log cleared",
-      description: "The AI action log has been cleared.",
-    });
-  };
-
-  // For development use - toggle context debugger (not shown in production)
-  const toggleContextDebugger = () => {
-    setShowContextDebugger(!showContextDebugger);
-  };
-
-  // Handle double click on a day in the calendar
-  const handleDayDoubleClick = (date: Date) => {
-    selectDate(date);
-    setDayDetailOpen(true);
-  };
+  const top3Data = getTop3Tasks();
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-gray-900" style={backgroundStyle}>
-      <Layout
-        header={
-          <Header 
-            date={formattedSelectedDate}
-            onGenerateSuggestions={handleGenerateSuggestions} 
-            isGenerating={isGenerating}
-            showActionLog={showActionLog}
-            onToggleActionLog={() => setShowActionLog(!showActionLog)}
-            onDebugContext={import.meta.env.DEV ? toggleContextDebugger : undefined}
+    <Layout
+      header={
+        <Header />
+      }
+      calendar={
+        <CalendarView
+          currentMonth={currentMonth}
+          daysInMonth={daysInMonth}
+          onPrevMonth={goToPreviousMonth}
+          onNextMonth={goToNextMonth}
+          onToday={goToToday}
+          onSelectDate={selectDate}
+          isToday={isToday}
+          isCurrentMonth={isCurrentMonth}
+          isSelected={isSelected}
+          tasks={allTasks}
+          timeBlocks={allTimeBlocks}
+        />
+      }
+      sidebar={
+        <div className="space-y-6">
+          <Top3TodoList
+            tasks={top3Data.tasks}
+            weekProgress={top3Data.progress}
           />
-        }
-        calendar={
-          <CalendarView
-            currentMonth={currentMonth}
-            daysInMonth={daysInMonth}
-            onPrevMonth={goToPreviousMonth}
-            onNextMonth={goToNextMonth}
-            onToday={goToToday}
-            onSelectDate={selectDate}
-            isToday={isToday}
-            isCurrentMonth={isCurrentMonth}
-            isSelected={isSelected}
-            tasks={allTasks}
-            timeBlocks={allTimeBlocks}
-            onDayDoubleClick={handleDayDoubleClick}
+          <AISuggestions
+            suggestions={suggestions}
+            onApply={applySuggestion}
+            onDismiss={dismissSuggestion}
+            onClearAll={clearAllSuggestions}
           />
-        }
-        content={
-          <>
-            <AISuggestions
-              suggestions={suggestions}
-              onApply={handleApplySuggestion}
-              onDismiss={dismissSuggestion}
-              onClearAll={clearAllSuggestions}
-            />
-            {/* TaskList component commented out
-            <TaskList
-              tasks={tasks}
-              timeBlocks={timeBlocks}
-              onToggleComplete={toggleTaskCompletion}
-              onAddTask={() => setTaskFormOpen(true)}
-              onAddTimeBlock={() => setTimeBlockFormOpen(true)}
-            />
-            */}
-          </>
-        }
-        sidebar={
           <ChatBox
             messages={messages}
             isLoading={isChatLoading}
-            onSendMessage={handleSendChatMessage}
+            onSendMessage={sendChatMessage}
+            actionLog={actionLog}
+            onClearActionLog={clearActionLog}
+            lastSystemContext={lastSystemContext}
           />
-        }
-      />
-      
-      {/* Action Log */}
-      <ActionLog 
-        logs={actionLog}
-        onClear={handleClearActionLog}
-        show={showActionLog}
-        onClose={() => setShowActionLog(false)}
-      />
-      
-      {/* Context Debugger - only in development */}
-      {import.meta.env.DEV && (
-        <ContextDebugger 
-          context={lastSystemContext}
-          show={showContextDebugger}
-          onClose={() => setShowContextDebugger(false)}
-        />
-      )}
-      
-      {/* Task form dialog */}
-      <TaskForm
-        isOpen={taskFormOpen}
-        onClose={() => setTaskFormOpen(false)}
-        onSave={handleSaveTask}
-        selectedDate={selectedDate}
-        type="task"
-      />
-      
-      {/* Time block form dialog */}
-      <TaskForm
-        isOpen={timeBlockFormOpen}
-        onClose={() => setTimeBlockFormOpen(false)}
-        onSave={handleSaveTask}
-        onSaveTimeBlock={handleSaveTimeBlock}
-        selectedDate={selectedDate}
-        type="timeBlock"
-      />
-
-      {/* Day detail dialog */}
-      <Dialog open={dayDetailOpen} onOpenChange={setDayDetailOpen}>
-        <DialogContent className="sm:max-w-[700px] max-h-[80vh] overflow-hidden flex flex-col">
-          <DialogHeader className="px-1">
-            <DialogTitle className="text-2xl font-bold text-primary">
-              {formattedSelectedDate}
-            </DialogTitle>
-            <DialogDescription className="text-muted-foreground">
-              View and manage your schedule for this day
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="flex justify-end space-x-2 my-2">
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={() => setTaskFormOpen(true)}
-              className="flex items-center gap-1"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-1"><rect width="18" height="18" x="3" y="3" rx="2" /><path d="m9 12 2 2 4-4" /></svg>
-              Add Task
-            </Button>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={() => setTimeBlockFormOpen(true)}
-              className="flex items-center gap-1"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-1"><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></svg>
-              Add Time Block
-            </Button>
-          </div>
-          
-          <div className="flex-1 overflow-auto py-4 -mx-6 px-6">
-            <TaskList
-              tasks={tasks}
-              timeBlocks={timeBlocks}
-              onToggleComplete={toggleTaskCompletion}
-              onAddTask={() => setTaskFormOpen(true)}
-              onAddTimeBlock={() => setTimeBlockFormOpen(true)}
-            />
-          </div>
-        </DialogContent>
-      </Dialog>
-    </div>
+        </div>
+      }
+    />
   );
 };
 

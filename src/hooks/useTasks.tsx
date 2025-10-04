@@ -3,8 +3,58 @@ import { Task, TimeBlock } from '../types';
 import { format } from 'date-fns';
 
 export const useTasks = (selectedDate: Date) => {
+  // Sample tasks for this week
+  const getSampleTasks = (): Task[] => {
+    const today = new Date();
+    const startOfWeek = new Date(today);
+    startOfWeek.setDate(today.getDate() - today.getDay()); // Start from Sunday
+    
+    return [
+      {
+        id: '1',
+        title: 'Apple for internship',
+        description: 'Prepare for Apple internship application',
+        date: format(new Date(startOfWeek.getTime() + 1 * 24 * 60 * 60 * 1000), 'yyyy-MM-dd'), // Monday
+        priority: 'high',
+        completed: false,
+        startTime: '09:00',
+        endTime: '10:00'
+      },
+      {
+        id: '2',
+        title: 'Clean the room',
+        description: 'Organize and clean bedroom',
+        date: format(new Date(startOfWeek.getTime() + 2 * 24 * 60 * 60 * 1000), 'yyyy-MM-dd'), // Tuesday
+        priority: 'medium',
+        completed: false,
+        startTime: '14:00',
+        endTime: '16:00'
+      },
+      {
+        id: '3',
+        title: 'Go to gym',
+        description: 'Workout session at the gym',
+        date: format(new Date(startOfWeek.getTime() + 3 * 24 * 60 * 60 * 1000), 'yyyy-MM-dd'), // Wednesday
+        priority: 'medium',
+        completed: false,
+        startTime: '18:00',
+        endTime: '19:30'
+      },
+      {
+        id: '4',
+        title: 'Study for exam',
+        description: 'Prepare for upcoming exam',
+        date: format(new Date(startOfWeek.getTime() + 4 * 24 * 60 * 60 * 1000), 'yyyy-MM-dd'), // Thursday
+        priority: 'high',
+        completed: false,
+        startTime: '19:00',
+        endTime: '21:00'
+      }
+    ];
+  };
+
   // In a real app, these would come from a database or API
-  const [tasks, setTasks] = useState<Task[]>([]);
+  const [tasks, setTasks] = useState<Task[]>(getSampleTasks());
   const [timeBlocks, setTimeBlocks] = useState<TimeBlock[]>([]);
   
   // Filter tasks for the selected date
@@ -99,7 +149,7 @@ export const useTasks = (selectedDate: Date) => {
         id: '3',
         title: 'Project deadline',
         description: 'Submit final report',
-        date: tomorrow,
+        date: today,
         completed: false,
         priority: 'high',
         tags: ['work', 'deadline']

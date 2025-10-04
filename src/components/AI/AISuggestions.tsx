@@ -22,7 +22,7 @@ const AISuggestions: React.FC<AISuggestionsProps> = ({
   }
 
   return (
-    <div className="bg-card rounded-lg shadow-sm p-4 mb-6">
+    <div className="bg-card rounded-lg shadow-sm p-4 mb-4">
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center">
           <Sparkles className="h-5 w-5 text-purple-500 mr-2" />

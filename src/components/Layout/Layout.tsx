@@ -3,7 +3,7 @@ import React, { ReactNode } from 'react';
 interface LayoutProps {
   header: ReactNode;
   calendar: ReactNode;
-  content: ReactNode;
+  content?: ReactNode;
   sidebar: ReactNode;
 }
 
@@ -16,11 +16,11 @@ const Layout: React.FC<LayoutProps> = ({ header, calendar, content, sidebar }) =
           <div className="flex-grow flex flex-col min-h-0">
             {calendar}
           </div>
-          {/* Content section commented out
-          <div className="overflow-auto mt-4">
-            {content}
-          </div>
-          */}
+          {content && (
+            <div className="overflow-auto mt-4">
+              {content}
+            </div>
+          )}
         </div>
         <div className="w-full md:w-1/4 p-4 bg-muted overflow-auto">
           {sidebar}

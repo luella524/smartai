@@ -1,8 +1,45 @@
-# Welcome to your Lovable project
+# Smart Day Scheduler AI
+
+An intelligent calendar assistant powered by AI that helps you manage your schedule with natural language commands.
 
 ## Project info
 
 **URL**: https://lovable.dev/projects/f7ecfdad-7ac1-456a-a94a-561e94852a13
+
+## 🤖 AI Features Setup
+
+To enable full AI functionality, you'll need to set up an OpenAI API key:
+
+### 1. Get an OpenAI API Key
+- Visit [OpenAI Platform](https://platform.openai.com/api-keys)
+- Sign up or log in to your account
+- Create a new API key
+
+### 2. Configure the API Key
+Create a `.env` file in your project root:
+
+```bash
+# Create .env file
+touch .env
+```
+
+Add your API key to the `.env` file:
+```env
+VITE_OPENAI_API_KEY=sk-your_actual_api_key_here
+```
+
+### 3. Restart the Development Server
+After adding the API key, restart your development server:
+```bash
+npm run dev
+```
+
+### 4. Verify Setup
+- Open your browser's developer console (F12)
+- Look for "🔑 API Key Status: ✅ Valid" in the console
+- The chat interface will show "Demo Mode" if no valid API key is detected
+
+**Note**: Without an API key, the app will run in demo mode with simulated responses.
 
 ## How can I edit this code?
 
