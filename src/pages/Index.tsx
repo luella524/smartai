@@ -110,7 +110,7 @@ const Index = () => {
         />
       }
       sidebar={
-        <div className="space-y-6">
+        <div className="space-y-8">
           <Top3TodoList
             tasks={top3Data.tasks}
             weekProgress={top3Data.progress}

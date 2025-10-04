@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Trophy, CheckCircle, Circle, Clock } from 'lucide-react';
@@ -16,6 +16,20 @@ interface Top3TodoListProps {
 }
 
 const Top3TodoList: React.FC<Top3TodoListProps> = ({ tasks, weekProgress }) => {
+  const [completedTasks, setCompletedTasks] = useState<Set<string>>(new Set());
+
+  const toggleTask = (taskId: string) => {
+    setCompletedTasks(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(taskId)) {
+        newSet.delete(taskId);
+      } else {
+        newSet.add(taskId);
+      }
+      return newSet;
+    });
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -35,30 +49,57 @@ const Top3TodoList: React.FC<Top3TodoListProps> = ({ tasks, weekProgress }) => {
         <CardContent className="pt-0">
           {tasks.length > 0 ? (
             <div className="space-y-2">
-              {tasks.map((task, index) => (
-                <motion.div
-                  key={task.id}
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: index * 0.1 }}
-                  className="flex items-center p-2 bg-white rounded-lg border border-gray-100 shadow-sm hover:shadow-md transition-shadow"
-                >
-                  <div className="flex items-center flex-1">
-                    <span className="text-sm font-medium text-gray-600 mr-2">
-                      {index + 1}.
-                    </span>
-                    <span className="text-sm text-gray-800 flex-1">
-                      {task.title}
-                    </span>
-                  </div>
-                  <div className="flex items-center">
-                    <Clock className="h-3 w-3 text-gray-400 mr-1" />
-                    <span className="text-xs text-gray-500">
-                      {task.priority === 'high' ? 'High' : task.priority === 'medium' ? 'Med' : 'Low'}
-                    </span>
-                  </div>
-                </motion.div>
-              ))}
+              {tasks.map((task, index) => {
+                const isCompleted = completedTasks.has(task.id);
+                return (
+                  <motion.div
+                    key={task.id}
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: index * 0.1 }}
+                    className={`flex items-center p-2 bg-white rounded-lg border border-gray-100 shadow-sm hover:shadow-md transition-all duration-200 ${
+                      isCompleted ? 'opacity-60' : ''
+                    }`}
+                  >
+                    <motion.button
+                      onClick={() => toggleTask(task.id)}
+                      whileHover={{ scale: 1.1 }}
+                      whileTap={{ scale: 0.9 }}
+                      className="mr-3 flex-shrink-0"
+                    >
+                      {isCompleted ? (
+                        <motion.div
+                          initial={{ scale: 0 }}
+                          animate={{ scale: 1 }}
+                          transition={{ type: "spring", stiffness: 500 }}
+                        >
+                          <CheckCircle className="h-5 w-5 text-green-500" />
+                        </motion.div>
+                      ) : (
+                        <Circle className="h-5 w-5 text-gray-300 hover:text-indigo-400 transition-colors" />
+                      )}
+                    </motion.button>
+                    
+                    <div className="flex items-center flex-1">
+                      <span className="text-sm font-medium text-gray-600 mr-2">
+                        {index + 1}.
+                      </span>
+                      <span className={`text-sm flex-1 transition-all duration-200 ${
+                        isCompleted ? 'line-through text-gray-500' : 'text-gray-800'
+                      }`}>
+                        {task.title}
+                      </span>
+                    </div>
+                    
+                    <div className="flex items-center">
+                      <Clock className="h-3 w-3 text-gray-400 mr-1" />
+                      <span className="text-xs text-gray-500">
+                        {task.priority === 'high' ? 'High' : task.priority === 'medium' ? 'Med' : 'Low'}
+                      </span>
+                    </div>
+                  </motion.div>
+                );
+              })}
             </div>
           ) : (
             <div className="text-center py-4">

@@ -181,23 +181,25 @@ const ChatBox: React.FC<ChatBoxProps> = ({
           className="flex items-center relative"
         >
           <motion.div
-            whileHover={{ rotate: [0, -5, 5, 0], scale: 1.1 }}
-            transition={{ duration: 1 }}
+            whileHover={{ rotate: [0, -10, 10, -5, 0], scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            transition={{ duration: 0.5 }}
             className="mr-2 bg-white/95 backdrop-blur-sm p-1.5 rounded-lg shadow-lg border border-white/20"
           >
             <motion.div
-              animate={{ 
-                rotate: [0, 360],
+              animate={{
+                rotate: [0, 5, -5, 0],
+                scale: [1, 1.05, 1],
               }}
-              transition={{ 
-                duration: 20, 
-                ease: "linear", 
-                repeat: Infinity 
+              transition={{
+                duration: 3,
+                repeat: Infinity,
+                ease: "easeInOut"
               }}
               className="relative"
             >
               <div className="absolute inset-0 bg-gradient-to-r from-indigo-400 to-purple-500 rounded-full blur-[3px] opacity-60" />
-              <Calendar className="h-5 w-5 text-indigo-600 relative z-10 drop-shadow-sm" />
+              <Bot className="h-5 w-5 text-indigo-600 relative z-10 drop-shadow-sm" />
             </motion.div>
           </motion.div>
           
@@ -228,36 +230,9 @@ const ChatBox: React.FC<ChatBoxProps> = ({
                 transition={{ duration: 0.5 }}
                 className="text-center py-2"
               >
-                <motion.div 
-                  className="w-16 h-16 mx-auto mb-4 relative"
-                  animate={{ 
-                    rotate: [0, 10, -10, 0],
-                  }}
-                  transition={{ 
-                    repeat: Infinity, 
-                    duration: 5,
-                    ease: "easeInOut"
-                  }}
-                >
-                  <div className="absolute inset-0 rounded-full bg-gradient-to-r from-indigo-500 via-purple-500 to-violet-500 blur-[20px] opacity-40" />
-                  <div className="w-full h-full rounded-full bg-gradient-to-br from-indigo-100 to-purple-100 dark:from-indigo-900/40 dark:to-purple-900/40 flex items-center justify-center relative border border-indigo-200/50 dark:border-indigo-700/50 shadow-lg">
-                    <motion.div
-                      animate={{
-                        scale: [1, 1.2, 1],
-                      }}
-                      transition={{ 
-                        repeat: Infinity,
-                        duration: 3,
-                        ease: "easeInOut"
-                      }}
-                    >
-                      <Sparkles className="h-8 w-8 text-indigo-600 dark:text-indigo-400 drop-shadow-sm" />
-                    </motion.div>
-                  </div>
-                </motion.div>
-                
+                {/* Headline Only */}
                 <motion.h3 
-                  className="text-lg font-bold text-gray-800 dark:text-gray-200 mb-2"
+                  className="text-xl font-bold text-gray-800 dark:text-gray-200 mb-3"
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.3 }}
@@ -266,7 +241,7 @@ const ChatBox: React.FC<ChatBoxProps> = ({
                 </motion.h3>
                 
                 <motion.p 
-                  className="text-sm text-gray-600 dark:text-gray-300 max-w-xs mx-auto font-medium"
+                  className="text-sm text-gray-500 dark:text-gray-400 max-w-sm mx-auto font-normal mb-6"
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.5 }}
@@ -275,7 +250,7 @@ const ChatBox: React.FC<ChatBoxProps> = ({
                 </motion.p>
                 
                 <motion.div
-                  className="mt-6 md:mt-8 space-y-2.5 md:space-y-3 max-w-[280px] md:max-w-[320px] mx-auto"
+                  className="space-y-2 max-w-[300px] mx-auto"
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   transition={{ delay: 0.7 }}
@@ -287,15 +262,15 @@ const ChatBox: React.FC<ChatBoxProps> = ({
                       animate={{ opacity: 1, x: 0 }}
                       transition={{ delay: 0.8 + index * 0.1 }}
                       whileHover={{ 
-                        scale: 1.03, 
-                        boxShadow: "0 8px 25px rgba(79,70,229,0.15)",
+                        scale: 1.02, 
+                        boxShadow: "0 4px 12px rgba(79,70,229,0.15)",
                         backgroundColor: "#f8fafc"
                       }}
-                      whileTap={{ scale: 0.97 }}
+                      whileTap={{ scale: 0.98 }}
                       onClick={() => handleSuggestionClick(suggestion)}
-                      className="text-xs md:text-sm px-4 md:px-5 py-2.5 md:py-3 bg-white/80 dark:bg-gray-700/80 backdrop-blur-sm rounded-xl md:rounded-2xl text-gray-700 dark:text-gray-300 shadow-lg border border-indigo-100/50 dark:border-gray-600/50 cursor-pointer flex items-center gap-2.5 md:gap-3 hover:border-indigo-200 dark:hover:border-indigo-500/50 transition-all duration-200"
+                      className="text-sm px-4 py-3 bg-white/90 dark:bg-gray-700/90 backdrop-blur-sm rounded-lg text-gray-700 dark:text-gray-300 shadow-sm border border-gray-200/50 dark:border-gray-600/50 cursor-pointer flex items-center gap-3 hover:border-indigo-200 dark:hover:border-indigo-500/50 transition-all duration-200"
                     >
-                      <div className="rounded-full bg-gradient-to-br from-indigo-100 to-purple-100 dark:from-indigo-800/60 dark:to-purple-800/60 p-2 shadow-sm">
+                      <div className="rounded-full bg-gradient-to-br from-indigo-100 to-purple-100 dark:from-indigo-800/60 dark:to-purple-800/60 p-2 shadow-sm flex-shrink-0">
                         {index % 3 === 0 ? (
                           <Calendar className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
                         ) : index % 3 === 1 ? (
